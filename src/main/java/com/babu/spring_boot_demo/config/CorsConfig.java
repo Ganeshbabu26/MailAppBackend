@@ -18,10 +18,11 @@ public class CorsConfig
                 new CorsConfiguration();
 
         configuration.setAllowedOrigins(
-                List.of("http://localhost:5173"));
+                List.of("http://localhost:5173",
+                        "https://mymailapp.netlify.app"));
 
         configuration.setAllowedMethods(
-                List.of("GET","POST","PUT","DELETE"));
+                List.of("GET","POST","PUT","DELETE","OPTIONS"));
 
         configuration.setAllowedHeaders(
                 List.of("*"));
