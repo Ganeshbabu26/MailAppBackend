@@ -30,10 +30,9 @@ public class MailService
     }
 
 
-    @Transactional // 1. டேட்டாபேஸ் பரிவர்த்தனை பாதுகாப்புக்கு
-    public MailResponse sendMail(SendMailRequest request) // String-க்கு பதில் MailResponse ரிட்டர்ன் செய்கிறோம்
+    @Transactional
+    public MailResponse sendMail(SendMailRequest request)
     {
-        // MailEntity உருவாக்கம்
 
 
         if(userRepository.findByEmail(request.getSender()).isEmpty())
@@ -58,7 +57,7 @@ public class MailService
 
         try
         {
-            // 2. சேமிப்பதற்கு முன்பே அனைத்து மதிப்புகளையும் சரியாக செட் செய்கிறோம்
+
             mail.setSentTime(LocalDateTime.now());
             mail.setStatus(MailStatus.SENT);
 
@@ -70,25 +69,22 @@ public class MailService
 
             System.out.println(mail.getSentTime());
 
-            //MailEntity savedMail = mailRepository.save(mail);
 
 
-
-            // 3. டேட்டாபேஸில் சேமித்து, ரிட்டர்ன் ஆகும் அப்டேட்டட் ஆப்ஜெக்ட்டைப் பெறுகிறோம்
             MailEntity savedMail = mailRepository.save(mail);
             flagsRepository.save(senderFlag);
             flagsRepository.save(receiverFlag);
 
             System.out.println(savedMail.getSentTime());
 
-            // 4. Response DTO-வை உருவாக்கி டேட்டாவை மேப் செய்கிறோம்
+
             MailResponse response = new MailResponse();
-            response.setId(savedMail.getId()); // DB ஜெனரேட் செய்த ID
+            response.setId(savedMail.getId());
             response.setSender(savedMail.getSender());
             response.setReceiver(savedMail.getReceiver());
             response.setSubject(savedMail.getSubject());
             response.setBody(savedMail.getBody());
-            response.setSentTime(savedMail.getSentTime()); // இப்போது இது null ஆக இருக்காது!
+            response.setSentTime(savedMail.getSentTime());
             response.setLabel(senderFlag.getLabel());
             response.setRead(senderFlag.isRead());
 
@@ -97,7 +93,6 @@ public class MailService
         }
         catch (Exception e)
         {
-            // எரர் வந்தால் Transaction ரோல்பேக் ஆகிவிடும்
             throw new RuntimeException("Mail sending failed: " + e.getMessage());
         }
     }
