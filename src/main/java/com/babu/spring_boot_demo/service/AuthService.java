@@ -8,21 +8,17 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
-public class AuthService
-{
+public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
-    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder)
-    {
+    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
-    public String register(RegisterRequest request)
-    {
-        if (userRepository.findByEmail(request.getEmail()).isPresent())
-        {
+    public String register(RegisterRequest request) {
+        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
             return "Email already exist";
         }
 
@@ -34,16 +30,13 @@ public class AuthService
         return "Registered successful!";
     }
 
-    public String login(LoginRequest request)
-    {
+    public String login(LoginRequest request) {
         UserEntity user = userRepository.findByEmail(request.getEmail()).orElse(null);
-        if (user==null)
-        {
+        if (user == null) {
             return "User not found";
         }
-        if (passwordEncoder.matches(request.getPassword(), user.getPassword()))
-        {
-            return "Logged in "+user.getEmail();
+        if (passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            return "Logged in " + user.getEmail();
         }
         return "Login failed";
     }

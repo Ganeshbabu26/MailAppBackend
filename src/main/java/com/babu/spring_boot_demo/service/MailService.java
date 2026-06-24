@@ -5,6 +5,7 @@ import com.babu.spring_boot_demo.dto.SendMailRequest;
 import com.babu.spring_boot_demo.entity.*;
 import com.babu.spring_boot_demo.repository.MailRepository;
 import com.babu.spring_boot_demo.repository.UserMailFlagsRepository;
+import com.babu.spring_boot_demo.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,13 +17,16 @@ public class MailService
 {
     private final MailRepository mailRepository;
     private final UserMailFlagsRepository flagsRepository;
+    private final UserRepository userRepository;
 
     public MailService(
             MailRepository mailRepository,
-            UserMailFlagsRepository flagsRepository)
+            UserMailFlagsRepository flagsRepository,
+            UserRepository userRepository)
     {
         this.mailRepository = mailRepository;
         this.flagsRepository = flagsRepository;
+        this.userRepository = userRepository;
     }
 
 
@@ -30,6 +34,19 @@ public class MailService
     public MailResponse sendMail(SendMailRequest request) // String-க்கு பதில் MailResponse ரிட்டர்ன் செய்கிறோம்
     {
         // MailEntity உருவாக்கம்
+
+
+        if(userRepository.findByEmail(request.getSender()).isEmpty())
+        {
+            throw new RuntimeException("Sender not found");
+        }
+
+        if(userRepository.findByEmail(request.getReceiver()).isEmpty())
+        {
+            throw new RuntimeException("Receiver not found");
+        }
+
+
         MailEntity mail = new MailEntity(
                 request.getSender(),
                 request.getReceiver(),
