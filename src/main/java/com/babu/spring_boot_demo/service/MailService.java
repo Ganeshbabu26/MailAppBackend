@@ -3,6 +3,7 @@ package com.babu.spring_boot_demo.service;
 import com.babu.spring_boot_demo.dto.MailResponse;
 import com.babu.spring_boot_demo.dto.SendMailRequest;
 import com.babu.spring_boot_demo.entity.*;
+import com.babu.spring_boot_demo.exceptions.UserNotFoundException;
 import com.babu.spring_boot_demo.repository.MailRepository;
 import com.babu.spring_boot_demo.repository.UserMailFlagsRepository;
 import com.babu.spring_boot_demo.repository.UserRepository;
@@ -29,30 +30,23 @@ public class MailService
         this.userRepository = userRepository;
     }
 
-
     @Transactional
-    public MailResponse sendMail(SendMailRequest request)
+    public MailResponse sendMail(String senderEmail,SendMailRequest request)
     {
 
-
-        if(userRepository.findByEmail(request.getSender()).isEmpty())
-        {
-            throw new RuntimeException("Sender not found");
-        }
-
-        if(userRepository.findByEmail(request.getReceiver()).isEmpty())
-        {
-            throw new RuntimeException("Receiver not found");
+        if (userRepository.findByEmail(request.getReceiver()).isEmpty()) {
+            throw new UserNotFoundException("Receiver not found");
         }
 
 
         MailEntity mail = new MailEntity(
-                request.getSender(),
+                senderEmail,
                 request.getReceiver(),
                 request.getSubject(),
                 request.getBody());
 
-        UserMailFlagsEntity senderFlag = new UserMailFlagsEntity(mail, request.getSender(), FolderType.SENT);
+
+        UserMailFlagsEntity senderFlag = new UserMailFlagsEntity(mail, senderEmail, FolderType.SENT);
         UserMailFlagsEntity receiverFlag = new UserMailFlagsEntity(mail, request.getReceiver(), FolderType.INBOX);
 
         try
@@ -61,21 +55,22 @@ public class MailService
             mail.setSentTime(LocalDateTime.now());
             mail.setStatus(MailStatus.SENT);
 
+
             senderFlag.setRead(true);
             senderFlag.setLabel(MailLabel.NORMAL);
             receiverFlag.setRead(false);
 
             mail.setSentTime(LocalDateTime.now());
 
-            System.out.println(mail.getSentTime());
-
 
 
             MailEntity savedMail = mailRepository.save(mail);
-            flagsRepository.save(senderFlag);
-            flagsRepository.save(receiverFlag);
+            //encrypt
+            saveUserMailFlags(
+                    savedMail,
+                    senderEmail,
+                    request.getReceiver());
 
-            System.out.println(savedMail.getSentTime());
 
 
             MailResponse response = new MailResponse();
@@ -323,4 +318,115 @@ public class MailService
     }
 
 
+    public MailResponse getMail(
+            String email,
+            Long mailId)
+    {
+        UserMailFlagsEntity flag =
+                flagsRepository
+                        .findByUserEmailAndMail_Id(
+                                email,
+                                mailId)
+                        .orElseThrow();
+
+        MailEntity mail =
+                flag.getMail();
+
+        MailResponse response =
+                new MailResponse();
+
+        response.setId(mail.getId());
+        response.setSender(mail.getSender());
+        response.setReceiver(mail.getReceiver());
+        response.setSubject(mail.getSubject());
+        response.setBody(mail.getBody());
+        response.setSentTime(mail.getSentTime());
+        response.setLabel(flag.getLabel());
+        response.setRead(flag.isRead());
+
+        return response;
+    }
+
+
+    private void saveUserMailFlags(
+            MailEntity mail,
+            String senderEmail,
+            String receiverEmail)
+    {
+        // Self-mail → save as DRAFT
+        if(senderEmail.equals(receiverEmail))
+        {
+            UserMailFlagsEntity draftFlag =
+                    new UserMailFlagsEntity(
+                            mail,
+                            senderEmail,
+                            FolderType.DRAFT);
+
+            draftFlag.setRead(true);
+            draftFlag.setLabel(MailLabel.NORMAL);
+
+            flagsRepository.save(draftFlag);
+
+            return;
+        }
+
+        // Sender copy
+        UserMailFlagsEntity senderFlag =
+                new UserMailFlagsEntity(
+                        mail,
+                        senderEmail,
+                        FolderType.SENT);
+
+        senderFlag.setRead(true);
+        senderFlag.setLabel(MailLabel.NORMAL);
+
+        // Receiver copy
+        UserMailFlagsEntity receiverFlag =
+                new UserMailFlagsEntity(
+                        mail,
+                        receiverEmail,
+                        FolderType.INBOX);
+
+        receiverFlag.setRead(false);
+        receiverFlag.setLabel(MailLabel.NORMAL);
+
+        flagsRepository.save(senderFlag);
+        flagsRepository.save(receiverFlag);
+    }
+
+    public List<MailResponse> getDraft(
+            String email)
+    {
+        return flagsRepository
+                .findByUserEmailAndFolder(
+                        email,
+                        FolderType.DRAFT)
+                .stream()
+                .map(flag -> {
+
+                    MailEntity mail =
+                            flag.getMail();
+
+                    MailResponse response =
+                            new MailResponse();
+
+                    response.setId(mail.getId());
+                    response.setSender(mail.getSender());
+                    response.setReceiver(mail.getReceiver());
+                    response.setSubject(mail.getSubject());
+                    response.setBody(mail.getBody());
+
+                    response.setLabel(
+                            flag.getLabel());
+
+                    response.setRead(
+                            flag.isRead());
+
+                    response.setSentTime(
+                            mail.getSentTime());
+
+                    return response;
+                })
+                .toList();
+    }
 }

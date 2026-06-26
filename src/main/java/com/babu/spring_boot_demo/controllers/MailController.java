@@ -1,11 +1,9 @@
 package com.babu.spring_boot_demo.controllers;
 import com.babu.spring_boot_demo.dto.MailResponse;
 import com.babu.spring_boot_demo.dto.SendMailRequest;
-import com.babu.spring_boot_demo.entity.MailEntity;
-import com.babu.spring_boot_demo.entity.UserMailFlagsEntity;
 import com.babu.spring_boot_demo.service.MailService;
 import org.springframework.web.bind.annotation.*;
-
+import org.springframework.security.core.Authentication;
 import java.util.List;
 
 @RestController
@@ -20,51 +18,83 @@ public class MailController
     }
 
     @PostMapping("/send")
-    public MailResponse sendMail(@RequestBody SendMailRequest request)
+    public MailResponse sendMail(
+            @RequestBody SendMailRequest request,
+            Authentication auth)
     {
-        return mailService.sendMail(request);
+        return mailService.sendMail(
+                auth.getName(),
+                request);
     }
 
-    @GetMapping("/inbox/{email}")
-    public List<MailResponse> getInbox(@PathVariable String email)
+    @GetMapping("/inbox")
+    public List<MailResponse> getInbox(
+            Authentication auth)
     {
-        return mailService.getInbox(email);
+        return mailService.getInbox(
+                auth.getName());
     }
 
-    @GetMapping("/sent/{email}")
-    public List<MailResponse> getSent(@PathVariable String email)
+    @GetMapping("/sent")
+    public List<MailResponse> getSent(
+            Authentication auth)
     {
-        return mailService.getSentBox(email);
+        return mailService.getSentBox(
+                auth.getName());
     }
 
-    @GetMapping("/trash/{email}")
+    @GetMapping("/trash")
     public List<MailResponse> getTrash(
-            @PathVariable String email)
+            Authentication auth)
     {
-        return mailService.getTrash(email);
+        return mailService.getTrash(
+                auth.getName());
     }
 
-    @GetMapping("/starred/{email}")
+    @GetMapping("/starred")
     public List<MailResponse> getStarred(
-            @PathVariable String email)
+            Authentication auth)
     {
-        return mailService.getStarred(email);
+        return mailService.getStarred(
+                auth.getName());
     }
 
-    @PutMapping("/trash/{email}/{mailId}")
+    @PutMapping("/trash/{mailId}")
     public String moveToTrash(
-            @PathVariable String email,
-            @PathVariable Long mailId)
+            @PathVariable Long mailId,
+            Authentication auth)
     {
-        return mailService.moveToTrash(email, mailId);
+        return mailService.moveToTrash(
+                auth.getName(),
+                mailId);
     }
 
-    @PutMapping("/star/{email}/{mailId}")
+    @PutMapping("/star/{mailId}")
     public String toggleStar(
-            @PathVariable String email,
-            @PathVariable Long mailId)
+            @PathVariable Long mailId,
+            Authentication auth)
     {
-        return mailService.toggleStarMail(email, mailId);
+        return mailService.toggleStarMail(
+                auth.getName(),
+                mailId);
+    }
+
+    @GetMapping("/{mailId}")
+    public MailResponse getMail(
+            @PathVariable Long mailId,
+            Authentication auth)
+    {
+        return mailService.getMail(
+                auth.getName(),
+                mailId);
+    }
+
+    @GetMapping("/draft")
+    public List<MailResponse> getDraft(
+            Authentication auth)
+    {
+        return mailService.getDraft(
+                auth.getName());
     }
 
 }

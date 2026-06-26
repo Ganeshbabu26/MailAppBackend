@@ -1,6 +1,7 @@
 package com.babu.spring_boot_demo.service;
 
 import com.babu.spring_boot_demo.dto.LoginRequest;
+import com.babu.spring_boot_demo.dto.LoginResponse;
 import com.babu.spring_boot_demo.dto.RegisterRequest;
 import com.babu.spring_boot_demo.entity.UserEntity;
 import com.babu.spring_boot_demo.repository.UserRepository;
@@ -11,10 +12,13 @@ import org.springframework.stereotype.Service;
 public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtService jwtService;
 
-    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService)
+    {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.jwtService = jwtService;
     }
 
     public String register(RegisterRequest request) {
@@ -30,15 +34,50 @@ public class AuthService {
         return "Registered successful!";
     }
 
-    public String login(LoginRequest request) {
-        UserEntity user = userRepository.findByEmail(request.getEmail()).orElse(null);
-        if (user == null) {
-            return "User not found";
+    public LoginResponse login(
+            LoginRequest request)
+    {
+        LoginResponse response =
+                new LoginResponse();
+
+        UserEntity user =
+                userRepository
+                        .findByEmail(
+                                request.getEmail())
+                        .orElse(null);
+
+        if(user == null)
+        {
+            response.setSuccess(false);
+            response.setMessage(
+                    "User not found");
+            return response;
         }
-        if (passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            return "Logged in " + user.getEmail();
+
+        if(!passwordEncoder.matches(
+                request.getPassword(),
+                user.getPassword()))
+        {
+            response.setSuccess(false);
+            response.setMessage(
+                    "Invalid password");
+            return response;
         }
-        return "Login failed";
+
+        String token =
+                jwtService.generateToken(
+                        user.getEmail());
+
+        response.setSuccess(true);
+        response.setMessage(
+                "Login successful");
+
+        response.setEmail(
+                user.getEmail());
+
+        response.setToken(token);
+
+        return response;
     }
 
 }

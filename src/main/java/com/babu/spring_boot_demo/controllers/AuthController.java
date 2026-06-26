@@ -1,6 +1,7 @@
 package com.babu.spring_boot_demo.controllers;
 
 import com.babu.spring_boot_demo.dto.LoginRequest;
+import com.babu.spring_boot_demo.dto.LoginResponse;
 import com.babu.spring_boot_demo.dto.RegisterRequest;
 import com.babu.spring_boot_demo.service.AuthService;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -26,7 +27,7 @@ public class AuthController
     }
 
     @PostMapping("/login")
-    public String login(@RequestBody LoginRequest request)
+    public LoginResponse login(@RequestBody LoginRequest request)
     {
         return authService.login(request);
     }
