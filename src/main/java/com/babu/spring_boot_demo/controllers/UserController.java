@@ -14,4 +14,20 @@ public class UserController
 {
     @Autowired
     private UserRepository userRepository;
+
+    @GetMapping("/check")
+    public Map<String, Boolean> checkUser(
+            @RequestParam String email)
+    {
+        boolean exists =
+                userRepository
+                        .findByEmail(email)
+                        .isPresent();
+
+        return Map.of(
+                "exists",
+                exists
+        );
+    }
+
 }

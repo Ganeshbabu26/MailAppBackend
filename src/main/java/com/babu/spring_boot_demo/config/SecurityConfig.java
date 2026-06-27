@@ -37,7 +37,8 @@ public class SecurityConfig
                                         "/auth/register")
                                 .permitAll()
 
-                                .requestMatchers("/mail/**")
+                                .requestMatchers("/mail/**",
+                                        "/api/users/**")
                                 .authenticated()
 
                                 .anyRequest()
