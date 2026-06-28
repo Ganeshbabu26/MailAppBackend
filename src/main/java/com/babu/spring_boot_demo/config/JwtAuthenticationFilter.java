@@ -53,21 +53,31 @@ public class JwtAuthenticationFilter
 
         try
         {
-            String email =
-                    jwtService.extractEmail(
-                            token);
+            if(jwtService.isTokenValid(token))
+            {
+                String email =
+                        jwtService.extractEmail(
+                                token);
 
-            UsernamePasswordAuthenticationToken auth =
-                    new UsernamePasswordAuthenticationToken(
-                            email,
-                            null,
-                            List.of(
-                                    new SimpleGrantedAuthority(
-                                            "USER")));
+                UsernamePasswordAuthenticationToken auth =
+                        new UsernamePasswordAuthenticationToken(
+                                email,
+                                null,
+                                List.of(
+                                        new SimpleGrantedAuthority(
+                                                "USER")));
 
-            SecurityContextHolder
-                    .getContext()
-                    .setAuthentication(auth);
+                SecurityContextHolder
+                        .getContext()
+                        .setAuthentication(auth);
+            }
+            else
+            {
+                response.setStatus(
+                        HttpServletResponse.SC_UNAUTHORIZED);
+
+                return;
+            }
         }
         catch(Exception e)
         {

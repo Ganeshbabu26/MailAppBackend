@@ -15,6 +15,10 @@ public class JwtService
     private static final String SECRET =
             "mySuperSecretKeyForMailApplication123456789";
 
+    // 30 days login validity
+    private static final long JWT_EXPIRATION =
+            1000L * 60 * 60 * 24 * 30;
+
     private final SecretKey key =
             Keys.hmacShaKeyFor(
                     SECRET.getBytes());
@@ -28,7 +32,7 @@ public class JwtService
                 .expiration(
                         new Date(
                                 System.currentTimeMillis()
-                                        + 86400000))
+                                        + JWT_EXPIRATION))
                 .signWith(key)
                 .compact();
     }
@@ -36,24 +40,48 @@ public class JwtService
     public String extractEmail(
             String token)
     {
-        Claims claims =
-                Jwts.parser()
-                        .verifyWith(key)
-                        .build()
-                        .parseSignedClaims(token)
-                        .getPayload();
+        return extractClaims(token)
+                .getSubject();
+    }
 
-        return claims.getSubject();
+    public boolean isTokenValid(
+            String token)
+    {
+        try
+        {
+            Date expiration =
+                    extractClaims(token)
+                            .getExpiration();
+
+            return expiration.after(
+                    new Date());
+        }
+        catch(Exception e)
+        {
+            return false;
+        }
+    }
+
+    private Claims extractClaims(
+            String token)
+    {
+        return Jwts.parser()
+                .verifyWith(key)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
     }
 
     public String extractToken(
             HttpServletRequest request)
     {
         String authHeader =
-                request.getHeader("Authorization");
+                request.getHeader(
+                        "Authorization");
 
         if(authHeader == null ||
-                !authHeader.startsWith("Bearer "))
+                !authHeader.startsWith(
+                        "Bearer "))
         {
             throw new RuntimeException(
                     "Missing token");
@@ -70,5 +98,4 @@ public class JwtService
 
         return extractEmail(token);
     }
-
 }
